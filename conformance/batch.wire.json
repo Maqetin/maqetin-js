@@ -1,0 +1,977 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "batch": {
+      "minItems": 1,
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "anonymousId": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "traits": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "plan": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "web",
+                  "ios",
+                  "android",
+                  "node",
+                  "python",
+                  "go",
+                  "rest"
+                ]
+              },
+              "sdkVersion": {
+                "type": "string"
+              },
+              "context": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "locale": {
+                    "type": "string",
+                    "maxLength": 35
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "library": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "version"
+                    ]
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "app": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "build": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "os": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "device": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string"
+                      },
+                      "manufacturer": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "page": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "maxLength": 768
+                      },
+                      "path": {
+                        "type": "string",
+                        "maxLength": 256
+                      },
+                      "referrer": {
+                        "type": "string",
+                        "maxLength": 512
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "campaign": {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "medium": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "term": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "content": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "clickIds": {
+                        "type": "object",
+                        "properties": {
+                          "gclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "gbraid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "wbraid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "dclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "fbclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "ttclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "li_fat_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "ScCid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "msclkid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "twclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "rdt_cid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "epik": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "tblci": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "dicbo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "capturedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "consent": {
+                    "type": "object",
+                    "properties": {
+                      "analytics": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adStorage": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adUserData": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adPersonalization": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "push": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "gpc": {
+                        "type": "boolean"
+                      },
+                      "att": {
+                        "type": "string",
+                        "enum": [
+                          "notDetermined",
+                          "restricted",
+                          "denied",
+                          "authorized"
+                        ]
+                      },
+                      "childDirected": {
+                        "type": "boolean"
+                      },
+                      "v": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "ts": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "analytics"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "userAgentData": {
+                    "type": "object",
+                    "properties": {
+                      "brands": {
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "brand": {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            "version": {
+                              "type": "string",
+                              "maxLength": 32
+                            }
+                          },
+                          "required": [
+                            "brand",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "mobile": {
+                        "type": "boolean"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "maxLength": 64
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "sessionId": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "messageId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "type": "string",
+                "const": "identify"
+              }
+            },
+            "required": [
+              "userId",
+              "traits",
+              "channel",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "anonymousId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "event": {
+                "type": "string",
+                "minLength": 1
+              },
+              "properties": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "web",
+                  "ios",
+                  "android",
+                  "node",
+                  "python",
+                  "go",
+                  "rest"
+                ]
+              },
+              "sdkVersion": {
+                "type": "string"
+              },
+              "context": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "locale": {
+                    "type": "string",
+                    "maxLength": 35
+                  },
+                  "deviceId": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "library": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "version"
+                    ]
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "app": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "build": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "os": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "device": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string"
+                      },
+                      "manufacturer": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "page": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "maxLength": 768
+                      },
+                      "path": {
+                        "type": "string",
+                        "maxLength": 256
+                      },
+                      "referrer": {
+                        "type": "string",
+                        "maxLength": 512
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "campaign": {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "medium": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "term": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "content": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "clickIds": {
+                        "type": "object",
+                        "properties": {
+                          "gclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "gbraid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "wbraid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "dclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "fbclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "ttclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "li_fat_id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "ScCid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "msclkid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "twclid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "rdt_cid": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "epik": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "tblci": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "dicbo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "capturedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "consent": {
+                    "type": "object",
+                    "properties": {
+                      "analytics": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adStorage": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adUserData": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "adPersonalization": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "push": {
+                        "type": "string",
+                        "enum": [
+                          "granted",
+                          "denied",
+                          "unset"
+                        ]
+                      },
+                      "gpc": {
+                        "type": "boolean"
+                      },
+                      "att": {
+                        "type": "string",
+                        "enum": [
+                          "notDetermined",
+                          "restricted",
+                          "denied",
+                          "authorized"
+                        ]
+                      },
+                      "childDirected": {
+                        "type": "boolean"
+                      },
+                      "v": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "ts": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "analytics"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "userAgentData": {
+                    "type": "object",
+                    "properties": {
+                      "brands": {
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "brand": {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            "version": {
+                              "type": "string",
+                              "maxLength": 32
+                            }
+                          },
+                          "required": [
+                            "brand",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "mobile": {
+                        "type": "boolean"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "maxLength": 64
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": {}
+              },
+              "sessionId": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "messageId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "type": "string",
+                "const": "track"
+              }
+            },
+            "required": [
+              "event",
+              "channel",
+              "type"
+            ],
+            "additionalProperties": false,
+            "anyOf": [
+              {
+                "required": [
+                  "userId"
+                ]
+              },
+              {
+                "required": [
+                  "anonymousId"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "anonymousId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "deviceId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "upsert",
+                  "detach"
+                ]
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "ios",
+                  "android",
+                  "web"
+                ]
+              },
+              "app": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "build": {
+                    "type": "string"
+                  }
+                }
+              },
+              "os": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                }
+              },
+              "device": {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string"
+                  },
+                  "manufacturer": {
+                    "type": "string"
+                  }
+                }
+              },
+              "timezone": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "locale": {
+                "type": "string",
+                "maxLength": 35
+              },
+              "library": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "version"
+                ]
+              },
+              "push": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  "tokenType": {
+                    "type": "string",
+                    "enum": [
+                      "apns",
+                      "fcm_token",
+                      "fcm_fid",
+                      "webpush"
+                    ]
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "production",
+                      "sandbox"
+                    ]
+                  },
+                  "permission": {
+                    "type": "string",
+                    "enum": [
+                      "granted",
+                      "provisional",
+                      "denied",
+                      "not_determined"
+                    ]
+                  },
+                  "marketingOptIn": {
+                    "type": "boolean"
+                  },
+                  "marketingOptInAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "permission"
+                ],
+                "additionalProperties": false,
+                "dependentRequired": {
+                  "token": [
+                    "tokenType"
+                  ]
+                }
+              },
+              "messageId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "type": "string",
+                "const": "device"
+              }
+            },
+            "required": [
+              "deviceId",
+              "action",
+              "platform",
+              "type"
+            ],
+            "additionalProperties": false,
+            "anyOf": [
+              {
+                "required": [
+                  "userId"
+                ]
+              },
+              {
+                "required": [
+                  "anonymousId"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "batch"
+  ],
+  "additionalProperties": false
+}

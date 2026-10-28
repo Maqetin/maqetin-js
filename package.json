@@ -1,0 +1,56 @@
+{
+  "name": "@maqetin/sdk-js",
+  "version": "0.1.0",
+  "description": "Maqetin JavaScript SDK: identify and track from the browser or Node, send transactional messages from a server",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./dist/server/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maqetin/maqetin-js.git"
+  },
+  "homepage": "https://github.com/Maqetin/maqetin-js#readme",
+  "bugs": {
+    "url": "https://github.com/Maqetin/maqetin-js/issues"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "check": "biome check . --write",
+    "ci:check": "biome ci .",
+    "verify": "pnpm ci:check && pnpm typecheck && pnpm build && pnpm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "^24.0.0",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "vitest": "5.0.2"
+  }
+}
