@@ -1,0 +1,53 @@
+name: Release
+
+# A tag `vX.Y.Z` on `main` stages that version on npm through trusted publishing (OIDC, no token).
+# Staged is not published: the owner approves it with 2FA (`npm stage approve <id>`).
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: The tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - uses: pnpm/action-setup@v6 # reads `packageManager` from package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Biome, type check, build, tests
+        run: pnpm verify
+
+      - name: The tag, package.json and SDK_VERSION are one version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          sdk="$(node -p "require('./dist/version.js').SDK_VERSION")"
+          echo "tag=$tag package.json=$pkg SDK_VERSION=$sdk"
+          [ "$tag" = "$pkg" ] && [ "$pkg" = "$sdk" ]
+
+      - name: npm is 11.5.1 or newer (trusted publishing)
+        run: |
+          npm --version
+          node -e "const [a,b,c]=process.argv[1].split('.').map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)" "$(npm --version)"
+
+      - name: Stage the package on npm
+        run: npm stage publish
