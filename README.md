@@ -61,7 +61,7 @@ Two things to know: the first view is sent when the client starts, so if you loa
 
 ### What the SDK collects
 
-Tell your users about these fields in your privacy notice. Set `disableAutoCollection: true` to send none of them.
+Tell your users about these fields in your privacy notice. Set `disableAutoCollection: true` to leave them out of `context`. Two still go out: `anonymousId`, which every call carries, and the page, which page views carry in their properties until you set `autoPageViews: false`.
 
 | Field | What it holds |
 |---|---|
@@ -71,6 +71,25 @@ Tell your users about these fields in your privacy notice. Set `disableAutoColle
 | `page.url`, `page.path`, `page.referrer` | The address of the page and of the page before it, **without the query string or the fragment** (they can hold tokens, reset links and email addresses) |
 | `page.title` | The page title as your page sets it. If your titles hold a name, so does this field |
 | `campaign` | The `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content` of the address, only when it has them |
+
+### What the SDK reads and writes on the device
+
+Every read and write the client makes on the visitor's device, with the version that started it. None of them asks the browser for a permission. The server entry runs in Node and touches no visitor's device. Each release's README holds the table for that version.
+
+| Since | What | Read or write | When | Why | How to stop it |
+|---|---|---|---|---|---|
+| 0.1.0 | `localStorage` key `maqetin.anonymousId` | Read and write | When the client starts; written again by `reset()` | Links a visitor's events before and after they sign in | `storage: memoryStorage()`: the id lasts until the page closes |
+| 0.1.0 | `localStorage` key `maqetin.userId` | Read, write and remove | Read when the client starts, written by `identify`, removed by `reset()` | Keeps the visitor identified after a page load | `storage: memoryStorage()`: the visitor is identified on that page only |
+| 0.1.0 | `localStorage` key `maqetin.deviceId` | Read and write | Read when the client starts, to learn whether the page may use storage; then read with each call, and written the first time | `context.deviceId`: tells one browser of a person from another | `disableAutoCollection: true` stops it with each call; `storage: memoryStorage()` stops the read at start as well |
+| 0.1.0 | Time zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) | Read | With each call | `context.timezone`, kept on the person's profile | `disableAutoCollection: true` |
+| 0.1.0 | Language (`navigator.language`) | Read | With each call | `context.locale`, kept on the person's profile | `disableAutoCollection: true` |
+| 0.1.0 | User agent (`navigator.userAgent`) | Read | With each call | `context.userAgent` | `disableAutoCollection: true` |
+| 0.1.0 | Page address (`location.href`) | Read | With each call, and with each page view | `context.page`, `context.campaign` and the page view's properties. The query string and the fragment are dropped; only the `utm_*` values are taken from the query | `disableAutoCollection: true`, `autoPageViews: false`, and no `page()` call |
+| 0.1.0 | Page address (`location.href`) | Read | When the client starts, only if `endpoint` is a path | Makes the full address of your endpoint; nothing is sent | Give `endpoint` as a full `https://` address |
+| 0.1.0 | Referring page (`document.referrer`) | Read | With each call, and with each page view | `context.page.referrer` and the page view's `referrer`, without the query string or the fragment | `disableAutoCollection: true`, `autoPageViews: false`, and no `page()` call |
+| 0.1.0 | Page title (`document.title`) | Read | With each call, and with each page view | `context.page.title` and the page view's `title` | `disableAutoCollection: true`, `autoPageViews: false`, and no `page()` call |
+
+If the browser refuses storage, the three ids last until the page closes. The client also listens for `pagehide`, `visibilitychange` and `popstate`, and wraps `history.pushState` and `history.replaceState`, to send queued calls before the page closes and to see a new path. These read only whether the page is hidden. The SDK sets no cookie.
 
 ### Send from your own domain
 
