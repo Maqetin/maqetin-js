@@ -14,11 +14,28 @@ import { MAX_CALL_BYTES, withinUserIdLength } from './limits.js';
 import { onNavigate } from './navigation.js';
 import { pageContext } from './page.js';
 import { EventQueue, type QueuedCall, type SendResult } from './queue.js';
+import { readReason } from './reason.js';
 import { type FetchLike, g, utf8Length, uuid, withTimeout } from './runtime.js';
 import { trackProblem } from './track.js';
 import type { Channel, EventContext, MaqetinError, QueueItem } from './types.js';
 
 const KEEPALIVE_MAX_BYTES = 60_000;
+
+/**
+ * With no `onError`, a drop is still never silent: one console warning per kind of failure (its kind and HTTP status),
+ * so a wrong key shows once, not once per batch.
+ */
+function warnOnce(): (err: MaqetinError) => void {
+  const seen = new Set<string>();
+  return (err) => {
+    const kind = `${err.kind}:${err.status ?? ''}`;
+    if (seen.has(kind)) return;
+    seen.add(kind);
+    g.console?.warn?.(
+      `maqetin-js: ${err.message} (${err.dropped} dropped). Later failures of this kind are not repeated; pass onError to see each one`,
+    );
+  };
+}
 
 /** The user a stored id names, if it is one the gateway accepts; otherwise nobody (the visitor is anonymous). */
 function storedUserId(storage: StorageLike): string | undefined {
@@ -105,7 +122,10 @@ export interface ClientOptions {
   autoPageViews?: boolean;
   /** Turns the auto-collected `context` off. */
   disableAutoCollection?: boolean;
-  /** Every dropped call is reported here (never silent). Default: none. */
+  /**
+   * Every dropped call is reported here (never silent), with the gateway's `error` and `at` when it gave them. Default:
+   * one `console.warn` per kind of failure.
+   */
   onError?: (err: MaqetinError) => void;
   /** Where `deviceId` and `anonymousId` live. Default: `localStorage` in a browser, memory in Node. */
   storage?: StorageLike;
@@ -152,7 +172,7 @@ export class MaqetinClient {
     this.#storage = options.storage ?? browserStorage() ?? memoryStorage();
     this.#channel = detectChannel();
     this.#autoCollect = options.disableAutoCollection !== true;
-    this.#onError = options.onError ?? (() => undefined);
+    this.#onError = options.onError ?? warnOnce();
     this.#anonymousId = persistentId(this.#storage, ANONYMOUS_ID_KEY);
     this.#userId = storedUserId(this.#storage);
     this.#timeoutMs = count('requestTimeoutMs', options.requestTimeoutMs, 10_000, 1);
@@ -319,17 +339,22 @@ export class MaqetinClient {
       }),
     );
     if (res.status >= 200 && res.status < 300) return { kind: 'ok' };
+    // The body may hang after the status arrived: its read has its own timeout and then gives no reason.
+    const reason = await withTimeout(this.#timeoutMs, () => readReason(res, this.#publicKey)).catch(
+      () => ({}),
+    );
     if (res.status === 429 || res.status >= 500) {
       const retryAfter = Number(res.headers.get('retry-after'));
       return {
         kind: 'retry',
         status: res.status,
+        reason,
         ...(Number.isFinite(retryAfter) && retryAfter > 0
           ? { retryAfterMs: retryAfter * 1_000 }
           : {}),
       };
     }
-    return { kind: 'reject', status: res.status };
+    return { kind: 'reject', status: res.status, reason };
   }
 
   #invalid(message: string): false {

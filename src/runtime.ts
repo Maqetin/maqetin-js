@@ -4,6 +4,8 @@
 export interface FetchResponseLike {
   status: number;
   headers: { get(name: string): string | null };
+  /** The body. Read only when a batch is refused, for the gateway's reason; a fetch without it still works. */
+  text?(): Promise<string>;
 }
 
 /**
@@ -38,6 +40,7 @@ interface Globals {
     addEventListener?: (type: string, listener: () => void) => void;
   };
   location?: { href?: string };
+  console?: { warn?: (...args: unknown[]) => void };
   history?: Record<string, unknown>;
   AbortController?: new () => { signal: unknown; abort(): void };
   URL?: new (url: string, base?: string) => { href: string; origin: string; protocol: string };

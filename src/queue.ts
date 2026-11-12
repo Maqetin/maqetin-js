@@ -1,4 +1,5 @@
 import { MAX_BATCH_BYTES } from './limits.js';
+import type { GatewayReason } from './reason.js';
 import { clearTimer, setTimer, sleep } from './runtime.js';
 import type { MaqetinError } from './types.js';
 
@@ -16,8 +17,18 @@ export const MAX_BATCH_ITEMS = 100;
 
 export type SendResult =
   | { kind: 'ok' }
-  | { kind: 'retry'; status?: number; retryAfterMs?: number }
-  | { kind: 'reject'; status: number };
+  | { kind: 'retry'; status?: number; retryAfterMs?: number; reason?: GatewayReason }
+  | { kind: 'reject'; status: number; reason?: GatewayReason };
+
+/** `HTTP 401: unauthorized`, or the status alone when the gateway gave no reason. */
+function answer(status: number, reason: GatewayReason | undefined): string {
+  return reason?.error === undefined ? `HTTP ${status}` : `HTTP ${status}: ${reason.error}`;
+}
+
+/** A 401 is nearly always a mistyped, deleted or revoked key: say where to look. */
+function hint(status: number): string {
+  return status === 401 ? '. Check that the public key is right and active' : '';
+}
 
 export interface QueueOptions {
   send(calls: readonly QueuedCall[]): Promise<SendResult>;
@@ -130,8 +141,9 @@ export class EventQueue {
       if (result.kind === 'reject') {
         this.#o.onError({
           kind: 'rejected',
-          message: `the gateway rejected a batch (HTTP ${result.status}); not retried`,
+          message: `the gateway rejected a batch (${answer(result.status, result.reason)}); not retried${hint(result.status)}`,
           status: result.status,
+          ...result.reason,
           dropped: batch.length,
         });
         return;
@@ -139,8 +151,12 @@ export class EventQueue {
       if (attempt >= this.#o.maxRetries) {
         this.#o.onError({
           kind: 'retries_exhausted',
-          message: `a batch failed ${attempt + 1} times; dropped`,
+          message:
+            result.status === undefined
+              ? `a batch failed ${attempt + 1} times; dropped`
+              : `a batch failed ${attempt + 1} times (last ${answer(result.status, result.reason)}); dropped`,
           ...(result.status === undefined ? {} : { status: result.status }),
+          ...result.reason,
           dropped: batch.length,
         });
         return;

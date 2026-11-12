@@ -46,6 +46,28 @@ The client refuses a secret key. Calls are batched to `https://in.maqetin.com/v1
 - **A call is fixed when you make it.** Changing the `properties` object after `track` does not change the event.
 - **Queued calls are sent when the page closes or goes to the background** (`pagehide` and `visibilitychange`).
 
+### When a batch is dropped
+
+Every dropped call is reported to `onError`, with the HTTP `status`, the gateway's `error`, and for a payload problem `at` (where in the batch). With no `onError`, the SDK writes one `console.warn` per kind of failure (its kind and status), so a wrong key shows once, not once per batch.
+
+```ts
+const mq = new MaqetinClient({
+  publicKey: 'mq_live_…',
+  onError: (err) => console.warn(err.kind, err.status, err.error, err.at),
+});
+```
+
+| Answer | What it means | What the SDK does |
+|---|---|---|
+| `401` | No active key: mistyped, deleted, revoked, or a proxy that drops `Authorization` | Drops the batch and reports it. Check that the public key is right and active |
+| `400` | A call the gateway does not accept; `at` says where | Drops the batch and reports it |
+| `413` | One event or the whole body is too large | Drops the batch and reports it |
+| `429` | Rate limited | Retries with backoff, waiting for `Retry-After`; after `maxRetries` drops and reports it |
+| `5xx` | The gateway is down or failing | Retries with backoff; after `maxRetries` drops and reports it |
+| Network error or timeout | No answer | Retries with the same message ids; after `maxRetries` drops and reports it |
+
+No message the SDK reports or writes holds the key: reason text that holds key text is dropped.
+
 ### Page views
 
 The client sends a page view (`page.viewed`) when it starts and when a single-page app moves to a new path (`pushState`, `replaceState`, back and forward). A change of the query string or the fragment alone is not a new page. Set `autoPageViews: false` to send them yourself:
@@ -197,6 +219,6 @@ const { messageId } = await mq.messages.send({
 - `from` must be on a verified sending domain of the workspace.
 - A retry after a 5xx, a 429 or a network error carries the same `Idempotency-Key`, so a retry never sends a second message. If you give no key, the SDK makes one.
 - A request that does not answer is given up after `requestTimeoutMs` (default 15 s) and retried under the same key.
-- A 4xx is thrown at once as `MaqetinRequestError` with `status`, `code` and `message`.
+- A 4xx is thrown at once as `MaqetinRequestError` with `status`, `code` and `message`. A 5xx, a 429 or a network error that outlasts the retries is thrown the same way. Nothing is dropped in silence, so this half has no `onError` and writes no warning.
 
 A message sent this way is transactional. It reaches a contact who unsubscribed from marketing, it never reaches a suppressed address, and it has no unsubscribe link.
