@@ -1,6 +1,6 @@
 {
   "name": "@maqetin/sdk-js",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Maqetin JavaScript SDK: identify and track from the browser or Node, send transactional messages from a server",
   "license": "MIT",
   "type": "module",
