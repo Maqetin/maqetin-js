@@ -12,7 +12,9 @@ type Sent = {
   body: { batch: Array<Record<string, unknown>>; sentAt: string };
 };
 
-function fakeFetch(statuses: Array<number | 'network'> = []) {
+type Answer = number | 'network' | { status: number; body?: string };
+
+function fakeFetch(statuses: Answer[] = []) {
   const sent: Sent[] = [];
   const queue = [...statuses];
   const fetch = vi.fn(
@@ -23,13 +25,19 @@ function fakeFetch(statuses: Array<number | 'network'> = []) {
       sent.push({ url, headers: init.headers, body: JSON.parse(init.body) });
       const next = queue.shift() ?? 202;
       if (next === 'network') throw new TypeError('fetch failed');
-      return { status: next, headers: { get: () => null } };
+      if (typeof next === 'number') return { status: next, headers: { get: () => null } };
+      const { status, body } = next;
+      return {
+        status,
+        headers: { get: () => null },
+        ...(body === undefined ? {} : { text: async () => body }),
+      };
     },
   );
   return { fetch, sent };
 }
 
-function client(opts: Partial<ClientOptions> = {}, statuses: Array<number | 'network'> = []) {
+function client(opts: Partial<ClientOptions> = {}, statuses: Answer[] = []) {
   const f = fakeFetch(statuses);
   const onError = vi.fn();
   const c = new MaqetinClient({
@@ -533,7 +541,178 @@ describe('who a track is about', () => {
   });
 });
 
+describe('why a batch was dropped', () => {
+  const unauthorized = { status: 401, body: '{"error":"unauthorized"}' };
+
+  it("a refused batch carries the gateway's error and at", async () => {
+    const body = JSON.stringify({ error: 'invalid payload', at: ['/batch/0/userId'] });
+    const { c, onError } = client({}, [{ status: 400, body }]);
+    c.identify('u_1');
+    await c.flush();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'rejected',
+        status: 400,
+        error: 'invalid payload',
+        at: ['/batch/0/userId'],
+        message: 'the gateway rejected a batch (HTTP 400: invalid payload); not retried',
+      }),
+    );
+  });
+
+  it('a 401 says to check the key', async () => {
+    const { c, onError } = client({}, [unauthorized]);
+    c.identify('u_1');
+    await c.flush();
+    expect(onError.mock.calls[0]?.[0]?.message).toBe(
+      'the gateway rejected a batch (HTTP 401: unauthorized); not retried. Check that the public key is right and active',
+    );
+  });
+
+  it("a dropped retry carries the last answer's reason", async () => {
+    const unavailable = { status: 503, body: '{"error":"unavailable"}' };
+    const { c, onError } = client({ maxRetries: 1, retryBaseMs: 1, retryMaxMs: 1 }, [
+      unavailable,
+      unavailable,
+    ]);
+    c.identify('u_1');
+    void c.flush();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'retries_exhausted',
+        status: 503,
+        error: 'unavailable',
+        message: 'a batch failed 2 times (last HTTP 503: unavailable); dropped',
+      }),
+    );
+  });
+
+  it.each([
+    ['a body that is not JSON', { status: 401, body: '<html>nope</html>' }],
+    ['a fetch without text()', 401],
+    ['a JSON body of the wrong shape', { status: 401, body: '{"error":42,"at":"x"}' }],
+  ] as const)('%s gives the status alone', async (_name, answer) => {
+    const { c, onError } = client({}, [answer]);
+    c.identify('u_1');
+    await c.flush();
+    const err = onError.mock.calls[0]?.[0];
+    expect(err).toMatchObject({ kind: 'rejected', status: 401 });
+    expect(err).not.toHaveProperty('error');
+    expect(err).not.toHaveProperty('at');
+  });
+
+  it('a body that never arrives gives the status alone, after its own timeout', async () => {
+    const hung: FetchResponseLike = {
+      status: 401,
+      headers: { get: () => null },
+      text: () => new Promise<string>(() => undefined),
+    };
+    const onError = vi.fn();
+    const c = new MaqetinClient({
+      publicKey: PUBLIC_KEY,
+      endpoint: 'https://ingest.example.test',
+      fetch: async () => hung,
+      onError,
+      requestTimeoutMs: 1_000,
+      storage: memoryStorage(),
+    });
+    c.identify('u_1');
+    void c.flush();
+    await vi.advanceTimersByTimeAsync(999);
+    expect(onError).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(onError).toHaveBeenCalledTimes(1);
+    const err = onError.mock.calls[0]?.[0];
+    expect(err).toMatchObject({ kind: 'rejected', status: 401 });
+    expect(err).not.toHaveProperty('error');
+  });
+
+  describe('with no onError', () => {
+    let warn: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+      warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+    afterEach(() => warn.mockRestore());
+
+    it('three 401 batches give one warning, not one per batch', async () => {
+      const { c } = client({ onError: undefined, flushAt: 1 }, [
+        unauthorized,
+        unauthorized,
+        unauthorized,
+      ]);
+      c.identify('u_1');
+      c.track('a');
+      c.track('b');
+      await c.flush();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]?.[0])).toMatch(
+        /^maqetin-js: the gateway rejected a batch \(HTTP 401: unauthorized\).*Check that the public key is right and active/,
+      );
+    });
+
+    it('a different kind of failure warns again', async () => {
+      const { c } = client({ onError: undefined, flushAt: 1 }, [400, unauthorized, 400]);
+      c.identify('u_1');
+      c.track('a');
+      c.track('b');
+      await c.flush();
+      expect(warn).toHaveBeenCalledTimes(2);
+    });
+
+    it('a refused call warns too (never silent)', () => {
+      const { c } = client({ onError: undefined });
+      c.identify('');
+      c.identify('');
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('never warns when onError is set', async () => {
+      const { c, onError } = client({}, [unauthorized]);
+      c.identify('u_1');
+      await c.flush();
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(warn).not.toHaveBeenCalled();
+    });
+  });
+});
+
 describe('the public key is never exposed', () => {
+  it('not in the warning or onError when the answer echoes the key', async () => {
+    const echo = {
+      status: 401,
+      body: JSON.stringify({
+        error: `bad key Bearer ${PUBLIC_KEY}`,
+        at: [PUBLIC_KEY, 'mq_test_x'],
+      }),
+    };
+    const echoBare = {
+      status: 401,
+      body: JSON.stringify({ error: PUBLIC_KEY.slice('mq_live_'.length) }),
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const quiet = client({ onError: undefined }, [echo]);
+      quiet.c.identify('u_1');
+      await quiet.c.flush();
+      const loud = client({ flushAt: 1 }, [echo, echoBare]);
+      loud.c.identify('u_1');
+      loud.c.track('a');
+      await loud.c.flush();
+      const said = JSON.stringify(warn.mock.calls) + JSON.stringify(loud.onError.mock.calls);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(loud.onError).toHaveBeenCalledTimes(2);
+      expect(said).not.toContain('SECRETwriteKEY');
+      expect(said).not.toMatch(/mq_/);
+      for (const [err] of loud.onError.mock.calls) {
+        expect(err).not.toHaveProperty('error');
+        expect(err).not.toHaveProperty('at');
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('not in errors, not in onError, not in the client object', async () => {
     const { c, onError } = client({ maxRetries: 0 }, [400, 'network', 503]);
     c.identify('u_1');

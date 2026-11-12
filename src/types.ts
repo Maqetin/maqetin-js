@@ -58,6 +58,10 @@ export interface MaqetinError {
   message: string;
   /** HTTP status, when the gateway answered. */
   status?: number;
+  /** The gateway's reason, when it gave one: `unauthorized`, `invalid payload`, `rate limited`, `unavailable`... */
+  error?: string;
+  /** Where in the batch the gateway found the problem (for `invalid payload` and `event too large`). */
+  at?: string[];
   /** How many calls were dropped. */
   dropped: number;
 }
